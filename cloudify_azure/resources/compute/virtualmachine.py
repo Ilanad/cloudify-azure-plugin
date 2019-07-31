@@ -43,7 +43,7 @@ from cloudify_azure.resources.network.publicipaddress \
 from cloudify_azure.resources.compute.availabilityset \
     import AvailabilitySet
 from cloudify_azure.resources.compute.virtualmachineextension \
-    import VirtualMachineExtension
+    import VirtualMachineExtension, Extension
 
 PS_OPEN = '<powershell>'
 PS_CLOSE = '</powershell>'
@@ -367,29 +367,50 @@ def create(args=None, **_):
 
 
 @operation
-def configure(command_to_execute, file_uris, type_handler_version='v2.0', **_):
-    '''Configures the resource'''
+def configure(command_to_execute, file_uris, script,
+              type_handler_version='v2.0', **_):
+    """Configures the resource"""
     os_family = ctx.node.properties.get('os_family', '').lower()
     if os_family == 'windows':
-        utils.task_resource_create(
-            VirtualMachineExtension(
-                virtual_machine=utils.get_resource_name(),
-                api_version=ctx.node.properties.get('api_version',
-                                                    constants.API_VER_COMPUTE)
-            ),
-            {
-                'location': ctx.node.properties.get('location'),
-                'tags': ctx.node.properties.get('tags'),
-                'properties': {
-                    'publisher': 'Microsoft.Compute',
-                    'type': 'CustomScriptExtension',
-                    'typeHandlerVersion': type_handler_version,
-                    'settings': {
-                        'fileUris': file_uris,
-                        'commandToExecute': command_to_execute
-                    }
-                }
-            })
+        resource = VirtualMachineExtension(
+            virtual_machine=utils.get_resource_name(),
+            api_version=ctx.node.properties.get('api_version',
+                                                constants.API_VER_COMPUTE)
+        )
+        custom_script_properties = {
+            'publisher': 'Microsoft.Compute',
+            'type': 'CustomScriptExtension',
+            'typeHandlerVersion': type_handler_version,
+            'settings': {
+                'fileUris': file_uris,
+                'commandToExecute': command_to_execute
+            }
+        }
+    elif os_family == 'linux':
+        resource = Extension()
+        custom_script_properties = {
+            'publisher': 'Microsoft.Azure.Extensions',
+            'type': 'CustomScript',
+            'typeHandlerVersion': type_handler_version,
+            'settings': {
+                'fileUris': file_uris,
+                'commandToExecute': command_to_execute
+            }
+        }
+        if script:
+            encoded_script = base64.b64encode(script)
+            custom_script_properties['settings']['script'] = encoded_script
+    else:
+        raise NonRecoverableError("Unhandled OS family type: '{0}'".format(
+            os_family))
+
+    utils.task_resource_create(
+        resource,
+        {
+            'location': ctx.node.properties.get('location'),
+            'tags': ctx.node.properties.get('tags'),
+            'properties': custom_script_properties
+        })
 
     virtual_machine_name = ctx.instance.runtime_properties.get('name')
     virtual_machine_iface = \

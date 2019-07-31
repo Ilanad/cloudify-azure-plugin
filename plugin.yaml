@@ -5,9 +5,9 @@
 plugins:
   azure:
     executor: central_deployment_agent
-    source: https://github.com/cloudify-incubator/cloudify-azure-plugin/archive/2.1.7.zip
+    source: https://github.com/cloudify-incubator/cloudify-azure-plugin/archive/2.1.8.zip
     package_name: cloudify-azure-plugin
-    package_version: '2.1.7'
+    package_version: '2.1.8'
 
 data_types:
   cloudify.datatypes.azure.Config:
@@ -1300,7 +1300,13 @@ node_types:
               default: powershell -ExecutionPolicy Unrestricted -file ps_enable_winrm_http.ps1
             file_uris:
               default:
-              - https://raw.githubusercontent.com/cloudify-incubator/cloudify-azure-plugin/1.4/scripts/ps_enable_winrm_http.ps1
+                - https://raw.githubusercontent.com/cloudify-incubator/cloudify-azure-plugin/1.4/scripts/ps_enable_winrm_http.ps1
+            script:
+              description: >
+                Only applicable for Linux VM's. This should be a script to run on VM's initialization.
+                According to the Azure API, the script needs to be sent Base64-encoded; the encoding will
+                be done by the plugin.
+              default: ''
         delete: azure.cloudify_azure.resources.compute.virtualmachine.delete
 
   cloudify.azure.nodes.compute.VirtualMachineExtension:

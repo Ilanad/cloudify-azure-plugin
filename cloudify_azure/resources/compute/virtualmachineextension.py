@@ -66,6 +66,25 @@ class VirtualMachineExtension(Resource):
             _ctx=_ctx)
 
 
+class Extension(Resource):
+    def __init__(self,
+                 resource_group=None,
+                 api_version="2015-06-15",
+                 logger=None,
+                 _ctx=ctx):
+        resource_group = resource_group or \
+                         utils.get_resource_group(_ctx=_ctx)
+        Resource.__init__(
+            self,
+            'Extension',
+            '/resourceGroups/{0}/providers/Extensions'.format(
+                resource_group,
+            ),
+            api_version=api_version,
+            logger=logger,
+            _ctx=_ctx)
+
+
 @operation
 def create(resource_config, **_):
     '''Uses an existing, or creates a new, Virtual Machine Extension'''
