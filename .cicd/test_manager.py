@@ -18,10 +18,12 @@ from random import random
 
 from integration_tests.tests.test_cases import PluginsTest
 
+DEVELOPMENT_ROOT = os.environ.get(
+    'REPO_BASE',
+    os.path.join(os.path.expanduser('~'), 'dev/repos'))
 PLUGIN_NAME = 'cloudify-azure-plugin'
-DEVELOPMENT_ROOT = os.path.abspath(
-    os.path.join(os.path.dirname(
-        os.path.realpath(__file__)), '../..'))
+TEST_KEY_PATH = '/tmp/foo.rsa'
+TEST_PUB_PATH = '/tmp/foo.rsa.pub'
 
 
 class AzurePluginTestCase(PluginsTest):
@@ -43,13 +45,15 @@ class AzurePluginTestCase(PluginsTest):
 
     def create_secrets(self):
         secrets = {
+            'agent_key_private': os.getenv('agent_key_private',
+                                           open(TEST_KEY_PATH).read()),
+            'agent_key_public': os.getenv('agent_key_public',
+                                          open(TEST_PUB_PATH).read()),
             'azure_subscription_id': os.getenv('azure_subscription_id'),
             'azure_tenant_id': os.getenv('azure_tenant_id'),
             'azure_client_id': os.getenv('azure_client_id'),
             'azure_client_secret': os.getenv('azure_client_secret'),
-            'azure_location': os.getenv('azure_location'),
-            'agent_key_private': os.getenv('agent_key_private'),
-            'agent_key_public': os.getenv('agent_key_public'),
+            'azure_location': os.getenv('azure_location', 'westeurope'),
         }
         self._create_secrets(secrets)
 
@@ -59,7 +63,8 @@ class AzurePluginTestCase(PluginsTest):
 
     def upload_plugins(self):
         self.upload_mock_plugin(
-            PLUGIN_NAME, self.plugin_root_directory)
+            PLUGIN_NAME,
+            os.path.join(DEVELOPMENT_ROOT, PLUGIN_NAME))
         self.upload_mock_plugin(
             'cloudify-utilities-plugin',
             os.path.join(DEVELOPMENT_ROOT, 'cloudify-utilities-plugin'))
