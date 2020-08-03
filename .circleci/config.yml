@@ -295,13 +295,16 @@ jobs:
       - checkout
       - release_plugin
 
+
 workflows:
   version: 2
   tests:
     jobs:
       - py3_compat
       - unittests_py27
-      - unittests_py36
+      - unittests_py36:
+          requires:
+            - py3_compat
       - wagon:
           filters:
             branches:
@@ -319,12 +322,14 @@ workflows:
             - rhel_wagon
       - integration_tests_505:
           requires:
+            - unittests_py27
             - build_bundle
           filters:
             branches:
               only: /([0-9\.]*\-build|master|dev)/
       - integration_tests_510:
           requires:
+            - unittests_py36
             - build_bundle
           filters:
             branches:
@@ -334,10 +339,6 @@ workflows:
             branches:
               only: /master/
           requires:
-            - unittests_py27
-            - unittests_py36
-            - rhel_wagon
-            - wagon
             - integration_tests_505
             - integration_tests_510
   nightly:
